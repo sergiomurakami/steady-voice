@@ -1,0 +1,13 @@
+# Private. Clinical material about a specific child, and the printed manuals
+# derived from it. Lives in the Drive folder only — never in the public repo.
+knowledge-base/
+printables/
+
+# macOS and Claude scratch
+.DS_Store
+Claude outputs/
+
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
