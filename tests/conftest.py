@@ -15,7 +15,11 @@ from playwright.sync_api import sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 APP_FILE = ROOT / "app" / "steadyvoice.html"
 APP_URL = APP_FILE.as_uri()
-CHROMIUM = "/opt/pw-browsers/chromium"
+# The cloud container ships a Chromium at a fixed path; a normal machine
+# uses the one `playwright install` puts in the user cache. Pin the first
+# if it exists, otherwise let Playwright find its own.
+_PINNED = pathlib.Path("/opt/pw-browsers/chromium")
+CHROMIUM = str(_PINNED) if _PINNED.exists() else None
 
 # A fixed "now" so date-dependent behaviour (streaks, rotation, charts) is
 # deterministic. Tuesday 8 September 2026, mid-morning local time.
@@ -33,7 +37,7 @@ def build_app():
 @pytest.fixture(scope="session")
 def browser():
     with sync_playwright() as p:
-        b = p.chromium.launch(executable_path=CHROMIUM)
+        b = p.chromium.launch(**({"executable_path": CHROMIUM} if CHROMIUM else {}))
         yield b
         b.close()
 

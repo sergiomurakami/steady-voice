@@ -373,6 +373,107 @@ const Storage = {
   write(o){ try{ localStorage.setItem(this.KEY, JSON.stringify(o)); return true; }catch(e){ return false; } }
 };
 
+/* ── 1b. AUDIO STORE ────────────────────────────────────────────────────
+   Saved recordings, so progress can be compared over weeks and a clip can
+   be handed to the speech pathologist.
+
+   IndexedDB, not localStorage: localStorage is strings only, so audio would
+   have to be base64'd — a third larger, synchronous, and into a quota
+   measured in single-digit megabytes. IndexedDB takes Blobs natively.
+
+   Two stores on purpose. Listing the library must not deserialise every
+   blob, so the small records live apart from the audio and only the clip
+   being played or shared is ever read.
+
+   This is still entirely local. Nothing is uploaded, and the app has no
+   server to upload to. It IS a real change from the original design, where
+   a recording died the moment you left the screen — a recording of a child's
+   voice is the most sensitive thing here, so Erase all data wipes this too,
+   and every clip has its own delete.
+
+   PORTING NOTE (React Native): this is the second browser-coupled layer.
+   Replace with react-native-fs writing to the app's private documents
+   directory, keyed the same way. */
+const Audio_ = {
+  DB: "steadyvoice-audio", VER: 1, META: "meta", BLOBS: "blobs",
+  _db: null,
+
+  open(){
+    if(this._db) return Promise.resolve(this._db);
+    return new Promise((res, rej) => {
+      if(!window.indexedDB) return rej(new Error("no indexedDB"));
+      const req = indexedDB.open(this.DB, this.VER);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if(!db.objectStoreNames.contains(this.META)){
+          /* keyPath id, plus an index on ts so the library can be read back
+             newest first without sorting the whole set in memory. */
+          db.createObjectStore(this.META, {keyPath:"id"}).createIndex("ts","ts");
+        }
+        if(!db.objectStoreNames.contains(this.BLOBS)) db.createObjectStore(this.BLOBS);
+      };
+      req.onsuccess = () => { this._db = req.result; res(this._db); };
+      req.onerror = () => rej(req.error);
+    });
+  },
+
+  _tx(stores, mode){
+    return this.open().then(db => db.transaction(stores, mode));
+  },
+
+  /* Resolves to the saved id, or null if storage refused. A failed save must
+     never take the practice session down with it. */
+  save(blob, meta){
+    return this.open().then(db => new Promise((res, rej) => {
+      const id = String(Date.now()) + "-" + Math.random().toString(36).slice(2,7);
+      const tx = db.transaction([this.META, this.BLOBS], "readwrite");
+      tx.objectStore(this.META).put(Object.assign({
+        id, ts: Date.now(), date: today(), mime: blob.type || "audio/mp4", size: blob.size
+      }, meta));
+      tx.objectStore(this.BLOBS).put(blob, id);
+      tx.oncomplete = () => res(id);
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error || new Error("aborted"));
+    })).catch(() => null);
+  },
+
+  /* Newest first. Metadata only — no audio is read. */
+  list(){
+    return this._tx([this.META], "readonly").then(tx => new Promise((res, rej) => {
+      const out = [];
+      const cur = tx.objectStore(this.META).index("ts").openCursor(null, "prev");
+      cur.onsuccess = e => { const c = e.target.result; if(c){ out.push(c.value); c.continue(); } else res(out); };
+      cur.onerror = () => rej(cur.error);
+    })).catch(() => []);
+  },
+
+  get(id){
+    return this._tx([this.BLOBS], "readonly").then(tx => new Promise((res, rej) => {
+      const r = tx.objectStore(this.BLOBS).get(id);
+      r.onsuccess = () => res(r.result || null);
+      r.onerror = () => rej(r.error);
+    })).catch(() => null);
+  },
+
+  remove(id){
+    return this._tx([this.META, this.BLOBS], "readwrite").then(tx => new Promise(res => {
+      tx.objectStore(this.META).delete(id);
+      tx.objectStore(this.BLOBS).delete(id);
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => res(false);
+    })).catch(() => false);
+  },
+
+  clear(){
+    return this._tx([this.META, this.BLOBS], "readwrite").then(tx => new Promise(res => {
+      tx.objectStore(this.META).clear();
+      tx.objectStore(this.BLOBS).clear();
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => res(false);
+    })).catch(() => false);
+  }
+};
+
 /* ── 2. STATE ───────────────────────────────────────────────────────── */
 const today = () => new Date().toISOString().slice(0,10);
 const addDays = (iso,n) => { const d=new Date(iso+"T12:00:00"); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
@@ -600,6 +701,7 @@ const ICONS = {
   out:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h11"/><path d="M11.5 8.5L15 12l-3.5 3.5"/><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/></svg>',
   talk:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 15.5H6a3 3 0 0 1-3-3v-4a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v.5"/><path d="M6.5 18.5v-3"/><path d="M15.5 20.5H18a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h.5v2.5l2.5-2.5z"/></svg>',
   learn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.4"/><path d="M12 17h.01"/></svg>',
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3"/></svg>',
   chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M7.5 15.5l3.5-4 3 2.5 4.5-6"/></svg>',
   log:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4"/></svg>',
   help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5S4 15.6 4 10.2A4.2 4.2 0 0 1 12 8a4.2 4.2 0 0 1 8 2.2c0 5.4-8 10.3-8 10.3z"/></svg>',
@@ -625,6 +727,7 @@ const KID_TABS = [
 const PARENT_TABS = [
   {id:"track", label:"Today", icon:"log"},
   {id:"progress", label:"Progress", icon:"chart"},
+  {id:"recordings", label:"Recordings", icon:"mic"},
   {id:"guides", label:"Guides", icon:"learn"},
   {id:"help", label:"Find help", icon:"help"}
 ];
@@ -658,6 +761,95 @@ function click(strong){
     g.gain.exponentialRampToValueAtTime(0.0001, t+0.075);
     o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.09);
   }catch(e){ /* no audio on this device — the visual beat still runs */ }
+}
+
+/* iPadOS Safari sends a Macintosh user agent by default (desktop-class
+   browsing), so a bare /iPad/ test misses every modern iPad. Touch points on
+   MacIntel is the standard tell — real Macs report 0. */
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+/* ── shared playback for the three recorders ────────────────────────────
+   Rebuilds the Audio element on every press rather than seeking back to
+   zero. Two reasons, both Safari:
+
+     1. Setting currentTime while readyState is HAVE_NOTHING throws
+        InvalidStateError. The throw landed BEFORE play() was called, so
+        playback died silently with nothing in the UI to show for it.
+     2. Safari's MediaRecorder emits MP4 that is frequently unseekable, so
+        even a well-timed seek is not reliable.
+
+   The blob is already in memory, so recreating costs nothing and always
+   starts at the beginning. The play() rejection is caught: an unhandled one
+   is invisible, which is how this looked like "recording works, playback
+   doesn't" rather than an error. */
+let playbackEl = null;
+function playBack(url){
+  if(!url) return;
+  stopPlayback();
+  playbackEl = new Audio(url);
+  playbackEl.play().catch(()=> toast(isIOS()
+    ? "No sound? Check the side silent switch"
+    : "Couldn't play that back"));
+}
+function stopPlayback(){
+  if(playbackEl){ playbackEl.pause(); playbackEl = null; }
+}
+
+/* Whatever was on screen when the recording was made. Read from the DOM at
+   save time rather than tracked separately, so it cannot drift out of step
+   with what the child was actually looking at. */
+function targetText(){
+  const n = el("sylTarget") || el("rTarget") || el("target");
+  return n ? n.textContent.replace(/\s+/g," ").trim().slice(0,160) : "";
+}
+
+/* Save a finished recording, and tell the parent it was kept. A storage
+   failure is reported but never interrupts the session. */
+function keepRecording(blob, meta){
+  return Audio_.save(blob, meta).then(id => {
+    toast(id ? "Saved to Recordings" : "Couldn't save that recording");
+    return id;
+  });
+}
+
+const SIZE = b => b < 1024 ? b+" B"
+  : b < 1048576 ? (b/1024).toFixed(0)+" KB"
+  : (b/1048576).toFixed(1)+" MB";
+
+/* A filename a speech pathologist can make sense of in a mail attachment. */
+function clipName(m){
+  const ext = /mp4|aac|m4a/.test(m.mime||"") ? "m4a" : /ogg/.test(m.mime||"") ? "ogg" : "webm";
+  const who = (S.profile.name || "steady-voice").replace(/[^\w-]+/g,"-");
+  const t = new Date(m.ts).toTimeString().slice(0,5).replace(":","");
+  return `${who}-${m.date}-${t}-${m.exercise||"practice"}.${ext}`;
+}
+
+/* Export one clip.
+ *
+ * Share sheet first: inside a home screen PWA on iOS a download link is
+ * unreliable and can silently do nothing, whereas the share sheet reaches
+ * Files, Mail, AirDrop and Messages. canShare({files}) is the only honest
+ * feature test — navigator.share alone exists on devices that refuse files.
+ * Everything else falls back to an ordinary download. */
+function shareClip(meta){
+  return Audio_.get(meta.id).then(blob => {
+    if(!blob) return toast("That recording is missing");
+    const name = clipName(meta);
+    let file = null;
+    try{ file = new File([blob], name, {type: blob.type || meta.mime}); }catch(e){ file = null; }
+    if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      return navigator.share({files:[file], title:name})
+        .catch(err => { if(err && err.name !== "AbortError") downloadBlob(blob, name); });
+    }
+    downloadBlob(blob, name);
+  });
+}
+function downloadBlob(blob, name){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
 }
 
 /* ── 5. VIEWS ───────────────────────────────────────────────────────── */
@@ -838,7 +1030,7 @@ function viewGame(id){
     </div>`;
 
   function mount(){
-    let rafId=null, breathTimer=null, mediaRec=null, chunks=[], audioUrl=null, audioEl=null, startedAt=Date.now();
+    let rafId=null, breathTimer=null, mediaRec=null, chunks=[], audioUrl=null, startedAt=Date.now();
 
     if(M.pacer){
       const path=el("pacerPath"), dot=el("pacerDot"), rateInput=el("pacerRate");
@@ -905,17 +1097,18 @@ function viewGame(id){
           mediaRec.ondataavailable = e=>chunks.push(e.data);
           mediaRec.onstop = ()=>{
             stream.getTracks().forEach(t=>t.stop());
-            if(audioUrl) URL.revokeObjectURL(audioUrl);
-            audioUrl = URL.createObjectURL(new Blob(chunks, {type: mediaRec.mimeType || "audio/mp4"}));
-            audioEl = new Audio(audioUrl);
+            stopPlayback(); if(audioUrl) URL.revokeObjectURL(audioUrl);
+            const blob = new Blob(chunks, {type: mediaRec.mimeType || "audio/mp4"});
+            audioUrl = URL.createObjectURL(blob);
             recBtn.textContent="● Record me"; playBtn.disabled=false;
-            recStatus.innerHTML = `<span style="font-size:12.5px;color:var(--muted)">On this device only, until you leave this screen.</span>`;
+            recStatus.innerHTML = `<span style="font-size:12.5px;color:var(--muted)">Kept on this device. Find it under Recordings in the grown-up view.</span>`;
+            keepRecording(blob, {exercise: id, label: targetText()});
           };
           mediaRec.start(); recBtn.textContent="■ Stop";
           recStatus.innerHTML = `<span class="rec-dot"></span><span style="font-size:12.5px;color:var(--ink-2)">Recording…</span>`;
         }catch(e){ toast("Microphone permission was declined"); }
       });
-      playBtn.addEventListener("click",()=>{ if(audioEl){ audioEl.currentTime=0; audioEl.play(); } });
+      playBtn.addEventListener("click",()=>playBack(audioUrl));
     }
 
     el("doneBtn").addEventListener("click",()=>{
@@ -928,7 +1121,7 @@ function viewGame(id){
       if(rafId) cancelAnimationFrame(rafId);
       if(breathTimer) clearTimeout(breathTimer);
       if(mediaRec && mediaRec.state==="recording") mediaRec.stop();
-      if(audioUrl) URL.revokeObjectURL(audioUrl);
+      stopPlayback(); if(audioUrl) URL.revokeObjectURL(audioUrl);
       if("speechSynthesis" in window) speechSynthesis.cancel();
     };
   }
@@ -992,7 +1185,7 @@ function viewSTS(){
         <button class="btn" id="startBtn">▶ Start beat</button>
         <button class="btn ghost sm" id="soundBtn" aria-pressed="true">🔊 Click on</button>
       </div>
-      ${/iPad|iPhone|iPod/.test(navigator.userAgent)
+      ${isIOS()
         ? `<p class="counter" style="margin-top:7px">No click? The side silent switch mutes it. The dots still keep the beat.</p>` : ""}
       <div class="row" style="justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap">
         <button class="btn ghost sm" id="recBtn">● Record me</button>
@@ -1029,7 +1222,7 @@ function viewSTS(){
 
   function mount(){
     let timer=null, beat=0, running=false, sound=true;
-    let mediaRec=null, chunks=[], audioUrl=null, audioEl=null, startedAt=Date.now();
+    let mediaRec=null, chunks=[], audioUrl=null, startedAt=Date.now();
     const sylEls = () => Array.from(document.querySelectorAll("#sylTarget [data-syl]"));
     let idx = 0;
 
@@ -1092,17 +1285,18 @@ function viewSTS(){
         mediaRec.ondataavailable = e=>chunks.push(e.data);
         mediaRec.onstop = ()=>{
           stream.getTracks().forEach(t=>t.stop());
-          if(audioUrl) URL.revokeObjectURL(audioUrl);
-          audioUrl = URL.createObjectURL(new Blob(chunks, {type: mediaRec.mimeType || "audio/mp4"}));
-          audioEl = new Audio(audioUrl);
+          stopPlayback(); if(audioUrl) URL.revokeObjectURL(audioUrl);
+          const blob = new Blob(chunks, {type: mediaRec.mimeType || "audio/mp4"});
+          audioUrl = URL.createObjectURL(blob);
           recBtn.textContent="● Record me"; playBtn.disabled=false;
           recStatus.innerHTML = `<span style="font-size:12.5px;color:var(--muted)">Listen back: is it even and joined up, or chopped?</span>`;
+          keepRecording(blob, {exercise: "sts", label: targetText()});
         };
         mediaRec.start(); recBtn.textContent="■ Stop";
         recStatus.innerHTML = `<span class="rec-dot"></span><span style="font-size:12.5px;color:var(--ink-2)">Recording…</span>`;
       }catch(e){ toast("Microphone permission was declined"); }
     });
-    playBtn.addEventListener("click",()=>{ if(audioEl){ audioEl.currentTime=0; audioEl.play(); } });
+    playBtn.addEventListener("click",()=>playBack(audioUrl));
 
     el("doneBtn").addEventListener("click",()=>{
       const d=day(), mins = Math.max(1, Math.min(30, Math.round((Date.now()-startedAt)/60000) || 5));
@@ -1113,7 +1307,7 @@ function viewSTS(){
     cleanup = ()=>{
       clearInterval(timer);
       if(mediaRec && mediaRec.state==="recording") mediaRec.stop();
-      if(audioUrl) URL.revokeObjectURL(audioUrl);
+      stopPlayback(); if(audioUrl) URL.revokeObjectURL(audioUrl);
     };
   }
   return { html, mount };
@@ -1259,7 +1453,7 @@ function viewRead(){
       accurate reading.
     </div>`;
   function mount(){
-    let mediaRec=null, chunks=[], audioUrl=null, audioEl=null;
+    let mediaRec=null, chunks=[], audioUrl=null;
     const show=()=>{ el("rTarget").textContent=set.items[i]; el("rCount").textContent=`${i+1} of ${set.items.length}`; };
     el("rNext").addEventListener("click",()=>{ i=(i+1)%set.items.length; show(); });
     el("rPrev").addEventListener("click",()=>{ i=(i-1+set.items.length)%set.items.length; show(); });
@@ -1278,18 +1472,19 @@ function viewRead(){
         mediaRec.ondataavailable=e=>chunks.push(e.data);
         mediaRec.onstop=()=>{
           stream.getTracks().forEach(t=>t.stop());
-          if(audioUrl) URL.revokeObjectURL(audioUrl);
-          audioUrl=URL.createObjectURL(new Blob(chunks, {type: mediaRec.mimeType || "audio/mp4"}));
-          audioEl=new Audio(audioUrl);
+          stopPlayback(); if(audioUrl) URL.revokeObjectURL(audioUrl);
+          const blob = new Blob(chunks, {type: mediaRec.mimeType || "audio/mp4"});
+          audioUrl=URL.createObjectURL(blob);
           el("rRec").textContent="● Record me"; el("rPlay").disabled=false;
           el("rStatus").innerHTML=`<span style="font-size:12.5px;color:var(--muted)">Stays on this device. Nothing is uploaded.</span>`;
+          keepRecording(blob, {exercise: "read", label: targetText()});
         };
         mediaRec.start(); el("rRec").textContent="■ Stop";
         el("rStatus").innerHTML=`<span class="rec-dot"></span><span style="font-size:12.5px;color:var(--ink-2)">Recording…</span>`;
       }catch(e){ toast("Microphone permission was declined"); }
     });
-    el("rPlay").addEventListener("click",()=>{ if(audioEl){ audioEl.currentTime=0; audioEl.play(); } });
-    cleanup=()=>{ if(mediaRec&&mediaRec.state==="recording") mediaRec.stop(); if(audioUrl) URL.revokeObjectURL(audioUrl); if("speechSynthesis" in window) speechSynthesis.cancel(); };
+    el("rPlay").addEventListener("click",()=>playBack(audioUrl));
+    cleanup=()=>{ if(mediaRec&&mediaRec.state==="recording") mediaRec.stop(); stopPlayback(); if(audioUrl) URL.revokeObjectURL(audioUrl); if("speechSynthesis" in window) speechSynthesis.cancel(); };
   }
   return { html, mount };
 }
@@ -2036,9 +2231,10 @@ function viewHelp(){
       </select>
       <p style="margin:6px 0 0; font-size:12.5px; color:var(--muted)">Match whichever your speech pathologist uses. Existing ratings are not rescaled.</p>
       <p style="margin:14px 0 0; font-size:12.5px; color:var(--muted); line-height:1.5">
-        Everything this app records — ratings, notes, situation scores — is stored in this browser on this
-        device only. Nothing is uploaded, no account, no speech recognition. Recordings exist only while you're
-        on that screen. Export the CSV to keep a copy.
+        Everything this app records — ratings, notes, situation scores and saved audio — is stored in this
+        browser on this device only. Nothing is uploaded, no account, no speech recognition. Recordings are
+        kept until you delete them; manage them under <strong>Recordings</strong>. Export the CSV, and share
+        any recording you want to keep, before clearing your browser's website data.
       </p>
       <button class="btn ghost sm" style="margin-top:12px" id="wipeBtn">Erase all data</button>
     </div>`,
@@ -2046,22 +2242,125 @@ function viewHelp(){
       el("kidName").addEventListener("input", e=>{ S.profile.name=e.target.value; save(); el("whoLabel").textContent = e.target.value ? "· "+e.target.value : ""; });
       el("srScaleSel").addEventListener("change", e=>{ S.srMax=+e.target.value; save(); toast(`Scale set to 0–${S.srMax}`); });
       el("wipeBtn").addEventListener("click", ()=>{
-        if(!confirm("Erase every rating, note and log on this device? This cannot be undone.")) return;
-        S = JSON.parse(JSON.stringify(DEFAULTS)); S.profile.startedOn = today(); save(); toast("Erased"); go("track");
+        if(!confirm("Erase every rating, note, log and recording on this device? This cannot be undone.")) return;
+        S = JSON.parse(JSON.stringify(DEFAULTS)); S.profile.startedOn = today(); save();
+        /* Audio is the most sensitive thing here. An erase that left a
+           child's voice behind in IndexedDB would be a lie. */
+        Audio_.clear().then(()=>{ toast("Erased"); go("track"); });
       });
+    }};
+}
+
+/* ── Recordings library ──────────────────────────────────────────────
+   Grown-up view only. The child records; the parent reviews, compares and
+   hands a clip to the clinician.
+
+   Renders a placeholder first and fills in on mount, because IndexedDB is
+   async and every other view in this app returns its HTML synchronously.
+   Not worth making the whole router async for one screen. */
+function viewRecordings(){
+  return { html:`
+    <h2 class="view-title">Recordings</h2>
+    <p class="view-sub">Every recording is kept on this device until you delete it. Compare an early one with a recent one — that contrast is usually more convincing than any chart, and it is the thing worth playing to a speech pathologist.</p>
+    <div id="recWrap"><p class="empty">Loading…</p></div>`,
+    mount(){
+      const wrap = el("recWrap");
+
+      function exerciseName(k){
+        const g = gameById(k);
+        return g ? g.name : k === "read" ? "Reading out loud" : "Practice";
+      }
+
+      function draw(rows, usedText){
+        if(!rows.length){
+          wrap.innerHTML = `<p class="empty">Nothing recorded yet.<br>Tap <strong>Record me</strong> in Syllable Time or Reading out loud, and the clip will appear here.</p>`;
+          return;
+        }
+        const days = [];
+        rows.forEach(r => {
+          let d = days.find(x => x.date === r.date);
+          if(!d){ d = {date:r.date, items:[]}; days.push(d); }
+          d.items.push(r);
+        });
+        wrap.innerHTML = `
+          <div class="card" style="margin-bottom:12px">
+            <div class="spread">
+              <div><b class="num" style="font-family:var(--display);font-size:22px">${rows.length}</b>
+                <span style="color:var(--muted);font-size:13px"> recording${rows.length===1?"":"s"}</span></div>
+              <span class="pill">${usedText}</span>
+            </div>
+          </div>
+          ${days.map(d=>`
+            <p class="eyebrow" style="margin:18px 0 8px">${prettyDate(d.date)}</p>
+            <div class="card" style="padding:4px 14px">
+              ${d.items.map(m=>`
+                <div class="sit-row" style="align-items:flex-start">
+                  <div class="sit-name">
+                    <strong style="font-size:13.5px">${esc(exerciseName(m.exercise))}</strong>
+                    <small>${new Date(m.ts).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"})} · ${SIZE(m.size)}</small>
+                    ${m.label ? `<small style="color:var(--ink-2);margin-top:2px">“${esc(m.label)}”</small>` : ""}
+                  </div>
+                  <div class="sit-pick" style="gap:5px">
+                    <button class="btn ghost sm" data-play="${m.id}" aria-label="Play">▶</button>
+                    <button class="btn ghost sm" data-share="${m.id}" aria-label="Share">↗</button>
+                    <button class="btn ghost sm" data-del="${m.id}" aria-label="Delete">✕</button>
+                  </div>
+                </div>`).join("")}
+            </div>`).join("")}
+          <button class="btn ghost wide" id="clearRec" style="margin-top:18px">Delete all recordings</button>
+          <p class="disclaimer">Recordings never leave this device unless you share one deliberately. They are
+          included in <strong>Erase all data</strong>. Clearing your browser's website data will also remove them,
+          so share anything you want to keep.</p>`;
+
+        wrap.querySelectorAll("[data-play]").forEach(b => b.addEventListener("click", () => {
+          Audio_.get(b.dataset.play).then(blob => {
+            if(!blob) return toast("That recording is missing");
+            /* A fresh object URL per press, revoked once playback ends —
+               holding one open for every row would leak the whole library. */
+            const url = URL.createObjectURL(blob);
+            playBack(url);
+            if(playbackEl) playbackEl.addEventListener("ended", ()=>URL.revokeObjectURL(url), {once:true});
+          });
+        }));
+        wrap.querySelectorAll("[data-share]").forEach(b => b.addEventListener("click", () => {
+          const m = rows.find(r => r.id === b.dataset.share);
+          if(m) shareClip(m);
+        }));
+        wrap.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+          if(!confirm("Delete this recording? This cannot be undone.")) return;
+          Audio_.remove(b.dataset.del).then(() => { toast("Deleted"); load(); });
+        }));
+        el("clearRec").addEventListener("click", () => {
+          if(!confirm(`Delete all ${rows.length} recordings? This cannot be undone.`)) return;
+          Audio_.clear().then(() => { toast("All recordings deleted"); load(); });
+        });
+      }
+
+      function load(){
+        const used = navigator.storage && navigator.storage.estimate
+          ? navigator.storage.estimate().catch(()=>null) : Promise.resolve(null);
+        Promise.all([Audio_.list(), used]).then(([rows, est]) => {
+          const bytes = rows.reduce((n,r) => n + (r.size||0), 0);
+          draw(rows, est && est.quota
+            ? `${SIZE(bytes)} of ${SIZE(est.quota)} available`
+            : SIZE(bytes));
+        });
+      }
+      load();
+      cleanup = stopPlayback;
     }};
 }
 
 /* ── 6. RENDER + ROUTER ─────────────────────────────────────────────── */
 const VIEWS = {
   today: viewToday, practice: viewPractice, read: viewRead, outloud: viewOutLoud, talk: viewTalk,
-  track: viewTrack, progress: viewProgress, guides: viewGuides, help: viewHelp
+  track: viewTrack, progress: viewProgress, recordings: viewRecordings, guides: viewGuides, help: viewHelp
 };
 
 function render(){
   if(cleanup){ cleanup(); cleanup=null; }
   const kidRoutes=["today","practice","read","outloud","talk","game"];
-  const parentRoutes=["track","progress","guides","help"];
+  const parentRoutes=["track","progress","recordings","guides","help"];
   if(S.mode==="kid" && parentRoutes.includes(route)) route="today";
   if(S.mode==="parent" && kidRoutes.includes(route)) route="track";
 

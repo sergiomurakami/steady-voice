@@ -21,11 +21,13 @@ Built around **syllable-timed speech** as specified in the [Oakville Program](ht
 
 Plus graded reading practice with a recorder, a conversation timer with prompts, and transfer tasks that take the technique out of the practice room.
 
+**Saved recordings.** Every clip is kept on the device with its date, exercise and the words that were on screen, so an early recording can be played against a recent one — usually more convincing than any chart — and a single clip can be handed to a speech pathologist through the system share sheet. Stored in IndexedDB, listed and deleted under a Recordings tab in the grown-up view.
+
 **A grown-up view** with daily severity ratings on either the Oakville 0–10 or Lidcombe 0–9 scale, per-situation ratings, 28-day trend charts, a practice log, and CSV export.
 
 ## Privacy
 
-Everything stays in `localStorage` on the device. No account, no upload, no analytics, no speech recognition anywhere. The only network requests the app makes are for the page itself and Google Fonts — [asserted by a test](tests/test_safety.py). CSV export is the only way data leaves the device, and you do that deliberately.
+Everything stays on the device — ratings and settings in `localStorage`, saved audio in IndexedDB. No account, no upload, no analytics, no speech recognition anywhere. The only network requests the app makes are for the page itself and Google Fonts — [asserted by a test](tests/test_safety.py). Data leaves the device only when you deliberately export a CSV or share a recording. Recordings are the most sensitive thing here, so each has its own delete, the library has a delete-all, and **Erase all data** wipes the audio store as well as the ratings — with a test that proves it.
 
 ## Build and deploy
 

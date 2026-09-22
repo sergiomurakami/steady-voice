@@ -13,7 +13,7 @@
  * cache. Bumping it by hand is the step everyone forgets, and forgetting it
  * means the phone happily serves last month's app forever.
  */
-const CACHE = "steady-voice-d3962e7221d9";
+const CACHE = "steady-voice-2c26b8e14a03";
 
 const ASSETS = [
   "./",

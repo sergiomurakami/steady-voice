@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Steady Voice — Como funciona</title>
+<style>
+:root{
+  --ink:#0E2422; --ink2:#3D5D5A; --soft:#6E8A86;
+  --teal:#0E7C7B; --tealsoft:#DCEEEC; --tealline:#9BC9C5;
+  --amber:#B4611D; --ambersoft:#F8EADC;
+  --tint:#F1F6F4; --rule:#D3E2DE; --paper:#fff;
+}
+@page{ size:A4; margin:0; }
+*{box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+html,body{margin:0; padding:0; background:#fff; color:var(--ink);
+  font-family:Carlito, "DejaVu Sans", sans-serif; font-size:11pt; line-height:1.46}
+
+.page{
+  width:210mm; height:297mm; padding:19mm 19mm 16mm; position:relative;
+  page-break-after:always; overflow:hidden; background:#fff;
+}
+.page:last-child{page-break-after:auto}
+
+h1,h2,h3,h4,.disp{font-family:Poppins, "DejaVu Sans", sans-serif; font-weight:600; letter-spacing:-.01em}
+h2{font-size:23pt; line-height:1.12; margin:0 0 3mm; color:var(--ink)}
+h3{font-size:14.5pt; margin:0 0 2mm; color:var(--ink)}
+h4{font-size:11.5pt; margin:0 0 1.5mm; color:var(--teal); font-weight:600}
+p{margin:0 0 2.5mm}
+.lead{font-size:12pt; color:var(--ink2); margin-bottom:4.5mm; max-width:150mm}
+strong{font-weight:700; color:var(--ink)}
+em{font-style:normal; background:var(--tealsoft); padding:0 .18em; border-radius:3px}
+.en{font-family:Poppins,sans-serif; font-weight:600; color:var(--teal); font-size:.95em}
+
+.eyebrow{font-family:Poppins,sans-serif; font-size:8.5pt; font-weight:600; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--teal); margin:0 0 2.5mm}
+
+.foot{position:absolute; left:19mm; right:19mm; bottom:9mm; display:flex;
+  justify-content:space-between; align-items:center; font-size:8.5pt; color:var(--soft);
+  border-top:.6pt solid var(--rule); padding-top:2.5mm}
+.foot .n{font-family:Poppins,sans-serif; font-weight:600; color:var(--teal)}
+
+.cover{background:var(--tint); display:flex; flex-direction:column; justify-content:center}
+.cover h1{font-size:52pt; line-height:.98; margin:0 0 4mm; letter-spacing:-.035em}
+.cover .sub{font-size:15pt; color:var(--ink2); max-width:132mm; margin:0 0 11mm; line-height:1.38}
+.cover .who{border-top:1.6pt solid var(--tealline); padding-top:5mm; font-size:10.5pt; color:var(--ink2); max-width:124mm}
+.cover .who b{font-family:Poppins,sans-serif; display:block; font-size:12pt; color:var(--ink); margin-bottom:1mm}
+
+.box{background:var(--tint); border-radius:5mm; padding:4.6mm 5.6mm; margin:0 0 4mm}
+.box.teal{background:var(--tealsoft)}
+.box.amber{background:var(--ambersoft)}
+.box h4{margin-bottom:2mm}
+.box p:last-child{margin-bottom:0}
+
+.tip{border-left:2.4pt solid var(--amber); background:var(--ambersoft);
+  padding:3.2mm 4.2mm; border-radius:0 3mm 3mm 0; margin:0 0 4mm; font-size:10pt; color:var(--ink2)}
+.tip b{color:var(--ink)}
+.tip.calm{border-left-color:var(--teal); background:var(--tealsoft)}
+
+.card{border:.8pt solid var(--rule); border-radius:4mm; padding:4mm 4.8mm; margin:0 0 3.2mm}
+.card.hl{border-color:var(--tealline); border-width:1.4pt}
+
+.ex{display:flex; gap:4.5mm; margin:0 0 4.6mm; page-break-inside:avoid}
+.ex .ico{flex:none; width:15mm; height:15mm; border-radius:4mm; background:var(--tealsoft);
+  display:flex; align-items:center; justify-content:center}
+.ex.amber .ico{background:var(--ambersoft)}
+.ex .body{flex:1; min-width:0}
+.ex h3{margin-bottom:.5mm}
+.ex .tech{font-size:9.5pt; color:var(--soft); margin:0 0 2mm}
+.ex p{font-size:10pt; margin-bottom:1.6mm}
+.ex p:last-child{margin-bottom:0}
+
+ul,ol{margin:0 0 2.8mm; padding-left:6mm}
+li{margin-bottom:1.1mm}
+ul.tight li{margin-bottom:.9mm}
+
+.two{display:grid; grid-template-columns:1fr 1fr; gap:4.5mm}
+
+.keyrow{display:flex; align-items:flex-start; gap:4mm; padding:2.2mm 0; border-bottom:.6pt solid var(--rule)}
+.keyrow:last-child{border-bottom:none}
+.btn{flex:none; font-family:Poppins,sans-serif; font-size:9.5pt; font-weight:600;
+  padding:2mm 4mm; border-radius:2.5mm; background:var(--teal); color:#fff; white-space:nowrap}
+.btn.ghost{background:#fff; color:var(--ink); border:.8pt solid var(--rule)}
+.keyrow .what{font-size:9.8pt; color:var(--ink2); padding-top:.8mm}
+.keyrow .what b{color:var(--ink)}
+
+.sev{display:flex; gap:1.5mm; margin:3mm 0 2mm}
+.sev span{flex:1; text-align:center; font-family:Poppins,sans-serif; font-weight:600; font-size:10pt;
+  padding:2.5mm 0; border-radius:2mm; border:.8pt solid var(--rule); color:var(--ink2)}
+.sev span.on{background:var(--teal); color:#fff; border-color:var(--teal)}
+.sevends{display:flex; justify-content:space-between; font-size:9pt; color:var(--soft)}
+
+table{width:100%; border-collapse:collapse; font-size:9.8pt; margin:0 0 3.2mm}
+th{text-align:left; font-family:Poppins,sans-serif; font-size:8.5pt; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--soft); font-weight:600; padding:0 3mm 2mm 0;
+  border-bottom:.8pt solid var(--rule)}
+td{padding:1.9mm 3mm 1.9mm 0; border-bottom:.6pt solid var(--rule); vertical-align:top; color:var(--ink2)}
+td b{color:var(--ink)}
+
+.hy-bar{display:flex; height:11px; border-radius:99px; overflow:hidden; background:var(--tint)}
+.mini{font-size:9.6pt; color:var(--soft)}
+</style>
+</head>
+<body>
+
+<!-- ─── 1 · capa ─────────────────────────────────────────────────── -->
+<section class="page cover">
+  <svg width="150" height="34" viewBox="0 0 300 34" style="margin-bottom:13mm">
+    <path d="M0 17 Q12 3 24 17 T48 17 T72 17 T96 17 T120 17 T144 17 T168 17 T192 17 T216 17 T240 17 T264 17 T288 17"
+          fill="none" stroke="#0E7C7B" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <h1>Steady<br>Voice</h1>
+  <p class="sub">Seu app para treinar a fala lisa. Aqui está o que cada botão faz, e como usar.</p>
+  <div class="who">
+    <b>Para quem é este manual</b>
+    A primeira metade é para você. A segunda metade é para um adulto. Você pode ler tudo se quiser — não tem nada secreto aqui.
+  </div>
+  <p style="margin-top:9mm; font-size:9.5pt; color:var(--soft); max-width:124mm">
+    O app está em inglês. Neste manual, o nome de cada botão aparece <span class="en">em verde</span>,
+    exatamente como está na tela, com a explicação em português ao lado.
+  </p>
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">1</span></div>
+</section>
+
+<!-- ─── 2 · o que é ──────────────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Comece por aqui</p>
+  <h2>Para que serve este app</h2>
+  <p class="lead">Às vezes as palavras travam na hora de sair. Isso se chama gagueira, e muita gente tem. Não é culpa sua, e não é porque você está nervoso ou não está se esforçando.</p>
+
+  <p>Sua boca faz um trabalho muito rápido. O Steady Voice dá um treino para ela, do mesmo jeito que você treinaria um esporte ou um instrumento. Você faz um pouquinho, quase todo dia, e vai ficando mais fácil.</p>
+
+  <div class="box teal">
+    <h4>Três coisas verdadeiras</h4>
+    <ul class="tight" style="margin-bottom:0">
+      <li>Existem dias lisos e dias travados. Um dia travado não quer dizer que você fez algo errado.</li>
+      <li>Ninguém neste app está te ouvindo nem te dando nota. <strong>Você</strong> decide como foi.</li>
+      <li>O app ajuda, mas ele não é um fonoaudiólogo. Funciona melhor quando você também tem um de verdade.</li>
+    </ul>
+  </div>
+
+  <h3 style="margin-top:6mm">Existem duas portas</h3>
+  <p>Olhe no canto de cima, à direita. Tem dois botõezinhos ali.</p>
+
+  <div class="two">
+    <div class="card">
+      <h4>☀ O sol</h4>
+      <p style="font-size:10pt; margin:0">Deixa o app claro ou escuro. Escolha o que for melhor para os seus olhos.</p>
+    </div>
+    <div class="card hl">
+      <h4>👥 As duas pessoas</h4>
+      <p style="font-size:10pt; margin:0">Troca entre o <strong>seu</strong> lado do app e o lado do <strong>adulto</strong>. Aperte e os botões de baixo mudam.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:5mm">Os botões de baixo, em português</h3>
+  <table>
+    <tr><th>Seu lado</th><th>O que é</th><th>Lado do adulto</th><th>O que é</th></tr>
+    <tr><td><span class="en">Today</span></td><td>Hoje</td><td><span class="en">Today</span></td><td>Hoje</td></tr>
+    <tr><td><span class="en">Practice</span></td><td>Treino</td><td><span class="en">Progress</span></td><td>Progresso</td></tr>
+    <tr><td><span class="en">Read</span></td><td>Ler em voz alta</td><td><span class="en">Guides</span></td><td>Guias</td></tr>
+    <tr><td><span class="en">Out Loud</span></td><td>Na vida real</td><td><span class="en">Find help</span></td><td>Achar ajuda</td></tr>
+    <tr><td><span class="en">Talk</span></td><td>Conversar</td><td></td><td></td></tr>
+  </table>
+
+  <div class="tip"><b>Dá para saber em que lado você está</b> olhando os botões de baixo. O seu lado tem cinco botões e começa com Today, Practice. O lado do adulto tem quatro e tem um chamado Progress.</div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">2</span></div>
+</section>
+
+<!-- ─── 3 · today ────────────────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Seu lado · botão 1</p>
+  <h2>Today <span style="font-size:14pt; color:var(--soft); font-weight:400">· Hoje</span></h2>
+  <p class="lead">É a página que abre primeiro. Ela mostra o que fazer hoje, e mais nada. Se você usar só esta página, já está ótimo.</p>
+
+  <div class="card hl">
+    <h4>O número no canto</h4>
+    <p style="margin:0">É a sua <strong>sequência</strong> — quantos dias seguidos você treinou. Ele não volta para zero só porque você ainda não começou hoje. Treine uma vez e ele sobe um.</p>
+  </div>
+
+  <div class="card">
+    <h4>Três tarefas</h4>
+    <p style="margin-bottom:2mm">Embaixo aparecem três treinos escolhidos para hoje. Toque em um e ele abre.</p>
+    <p style="margin:0">Quando você termina um, aparece um tiquinho do lado. Três tiques é um dia excelente. Um tique já é um bom dia.</p>
+  </div>
+
+  <div class="card">
+    <h4>A tarefa da vida real</h4>
+    <p style="margin:0">Uma coisa para tentar fora da tela. Algo como <em>usar fala silabada em duas frases enquanto a gente faz o jantar</em>. Tem uma página inteira sobre isso mais para a frente.</p>
+  </div>
+
+  <div class="tip"><b>Por que três, e por que estes três?</b> Eles mudam todo dia para você não enjoar, e o primeiro é sempre um treino de ritmo, porque é o que mais ajuda.</div>
+
+  <h3 style="margin-top:6mm">Quanto tempo eu faço?</h3>
+  <p>Pouco e sempre é melhor do que muito e raramente. Algumas voltinhas de cinco ou dez minutos ao longo do dia valem bem mais do que uma sessão gigante uma vez por semana. Os fonoaudiólogos pedem <strong>de quatro a seis voltinhas por dia</strong> no começo.</p>
+  <p>Você não precisa fazer tudo isso no app. Conversar com um adulto usando fala silabada enquanto passeia com o cachorro também conta.</p>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">3</span></div>
+</section>
+
+<!-- ─── 4 · practice ─────────────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Seu lado · botão 2</p>
+  <h2>Practice <span style="font-size:14pt; color:var(--soft); font-weight:400">· Treino</span></h2>
+  <p class="lead">Nove exercícios, em quatro grupos. O grupo já diz o que cada um treina.</p>
+
+  <table>
+    <tr><th>Grupo</th><th>O que treina</th><th>Exercícios</th></tr>
+    <tr><td><b>Rhythm and rate</b><br><span class="mini">Ritmo e velocidade</span></td><td>A velocidade e a batida da sua fala. O grupo maior, e o mais importante para você.</td><td>Syllable Time<br>Hybrid Session<br>Stretchy Speech</td></tr>
+    <tr><td><b>Smooth mechanics</b><br><span class="mini">Como a boca faz o som</span></td><td>O que a sua boca e a sua respiração estão fazendo de verdade.</td><td>Gentle Starts<br>Feather Touch<br>Wave Breathing</td></tr>
+    <tr><td><b>Building up</b><br><span class="mini">Aumentando aos poucos</span></td><td>Ir de pedaços curtos e fáceis para pedaços mais longos e difíceis.</td><td>Word Ladder<br>Stepping Stones</td></tr>
+    <tr><td><b>When a word gets stuck</b><br><span class="mini">Quando a palavra trava</span></td><td>O que fazer no exato momento em que a palavra não sai.</td><td>Rescue Moves</td></tr>
+  </table>
+
+  <div class="box teal">
+    <h4>Se você escolher só um</h4>
+    <p style="margin:0">Escolha o <strong>Syllable Time</strong>. É o exercício em volta do qual este app inteiro foi feito, e ele vem de um programa de tratamento de verdade, usado por fonoaudiólogos na Austrália. Os outros oito são ajudantes.</p>
+  </div>
+
+  <h3 style="margin-top:5mm">Todo exercício tem o mesmo formato</h3>
+  <ul>
+    <li>Uma coisa para falar, em letras grandes no meio.</li>
+    <li>Uma linha embaixo dizendo como falar.</li>
+    <li>Botões para ouvir, gravar você e escutar de novo.</li>
+    <li>Dois botões no fim: <span class="en">Smooth</span> (saiu lisa) ou <span class="en">Bumpy</span> (travou). Você escolhe. Aí passa para o próximo.</li>
+    <li>Uma caixa <span class="en">Why this one</span> lá embaixo explicando para que aquilo serve.</li>
+    <li><span class="en">Finish practice</span> quando terminar. É isso que salva os seus minutos.</li>
+  </ul>
+
+  <div class="tip"><b>Nada está te escutando.</b> O app não consegue saber se você travou. Quando você toca em Smooth ou Bumpy, quem está decidindo é <em>você</em>. Perceber como foi já faz parte do treino, então seja sincero — mas nunca seja duro com você mesmo.</div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">4</span></div>
+</section>
+
+<!-- ─── 5 · syllable time ────────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Ritmo e velocidade</p>
+  <h2>Syllable Time <span style="font-size:14pt; color:var(--soft); font-weight:400">· Fala silabada</span></h2>
+  <p class="lead">O principal. Você fala cada sílaba no ritmo de uma batida, como se um tambor estivesse te segurando firme.</p>
+
+  <div class="box" style="text-align:center; padding:6mm">
+    <svg width="330" height="86" viewBox="0 0 330 86">
+      <circle cx="123" cy="12" r="6" fill="#9BC9C5"/>
+      <circle cx="149" cy="12" r="9" fill="#0E7C7B"/>
+      <circle cx="175" cy="12" r="6" fill="#9BC9C5"/>
+      <circle cx="201" cy="12" r="6" fill="#9BC9C5"/>
+      <rect x="52" y="38" width="52" height="34" rx="6" fill="#0E7C7B"/>
+      <text x="78" y="61" text-anchor="middle" font-family="Poppins" font-size="19" font-weight="600" fill="#fff">chil</text>
+      <text x="112" y="61" font-family="Poppins" font-size="19" fill="#9BC9C5">-</text>
+      <text x="124" y="61" font-family="Poppins" font-size="19" font-weight="600" fill="#0E2422">dren</text>
+      <text x="184" y="61" font-family="Poppins" font-size="19" font-weight="600" fill="#0E2422">are</text>
+      <text x="228" y="61" font-family="Poppins" font-size="19" font-weight="600" fill="#0E2422">play</text>
+      <text x="278" y="61" font-family="Poppins" font-size="19" fill="#9BC9C5">-</text>
+      <text x="290" y="61" font-family="Poppins" font-size="19" font-weight="600" fill="#0E2422">ing</text>
+    </svg>
+    <p class="mini" style="margin:0">Uma sílaba acende a cada batida. Fale aquela sílaba.</p>
+  </div>
+
+  <h3>O que é uma sílaba</h3>
+  <p>Sílaba é uma batida da palavra. <strong>Gato</strong> tem duas: <strong>ga-to</strong>. <strong>Bi-ci-cle-ta</strong> tem quatro. O app coloca tracinhos entre elas para você ver onde elas se separam.</p>
+  <p class="mini">As frases do app estão em inglês, mas a ideia é a mesma em qualquer língua. Você pode treinar em português também: <strong>As cri-an-ças es-tão brin-can-do.</strong></p>
+
+  <h3 style="margin-top:4mm">Como fazer</h3>
+  <ol>
+    <li>Aperte <span class="en">Start beat</span>. Você vai ouvir um clique e ver as bolinhas acenderem.</li>
+    <li>Fale uma sílaba em cada batida. A que está acesa é onde você deveria estar.</li>
+    <li>Deixe todas as sílabas <strong>do mesmo tamanho</strong>. Nenhuma mais longa, nenhuma mais forte.</li>
+    <li><strong>Emende uma na outra</strong>, como quem canta uma linha. Não pique em pedacinhos.</li>
+    <li>Mantenha a sua voz normal — volume normal, expressão normal. Tem que continuar parecendo você.</li>
+  </ol>
+
+  <div class="tip"><b>O erro mais comum.</b> Deixar picado e robótico. Tem que fluir. Se ficar parecendo robô, a batida está rápida demais — puxe para mais devagar.</div>
+
+  <h3>Os botões</h3>
+  <div class="keyrow"><span class="btn">▶ Start beat</span><span class="what">Liga e desliga o metrônomo. Aperte de novo para parar.</span></div>
+  <div class="keyrow"><span class="btn ghost">🔊 Click on</span><span class="what">Liga ou desliga o som do clique. As bolinhas piscam do mesmo jeito.</span></div>
+  <div class="keyrow"><span class="btn ghost">slower ⟷ faster</span><span class="what"><b>Comece devagar.</b> Só acelere quando devagar estiver muito fácil. O app guarda a sua velocidade para a próxima vez.</span></div>
+  <div class="keyrow"><span class="btn ghost">Longer ones →</span><span class="what">Troca entre frases curtas e frases mais longas. Comece pelas curtas.</span></div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">5</span></div>
+</section>
+
+<!-- ─── 6 · hybrid + stretchy ────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Ritmo e velocidade</p>
+  <h2>Hybrid Session <span style="font-size:13pt; color:var(--soft); font-weight:400">· Sessão mista</span></h2>
+  <p class="lead">Metade fala silabada, metade a sua voz normal. É a ponte entre treinar e a vida real.</p>
+
+  <div class="box" style="padding:5mm 6mm">
+    <svg width="100%" height="26" viewBox="0 0 460 26" preserveAspectRatio="none" style="display:block">
+      <rect x="0" y="4" width="230" height="18" rx="9" fill="#0E7C7B"/>
+      <rect x="230" y="4" width="230" height="18" rx="9" fill="#B4611D"/>
+    </svg>
+    <div style="display:flex; justify-content:space-between; font-size:9.6pt; color:var(--soft); margin-top:2mm">
+      <span>Primeira metade · fala silabada</span><span>Segunda metade · fala normal</span>
+    </div>
+  </div>
+
+  <p>Escolha quanto tempo dura tudo, aperte começar, e faça a primeira metade em fala silabada com um adulto. Quando o relógio virar, é só falar normalmente sobre o que você quiser. Quase sempre a fala lisa da primeira metade continua na segunda. É exatamente esse o objetivo.</p>
+
+  <div class="two" style="margin-top:3.5mm">
+    <div class="card"><h4>A barrinha de cima</h4><p style="font-size:10pt;margin:0">Quanto do tempo é fala silabada. Comece com metade e metade.</p></div>
+    <div class="card"><h4>A barrinha de baixo</h4><p style="font-size:10pt;margin:0">Quanto tempo dura a sessão inteira, de 6 a 20 minutos.</p></div>
+  </div>
+
+  <div class="tip"><b>Ao longo das semanas</b>, o adulto vai puxando a barrinha de cima cada vez mais para o lado da fala normal — metade, depois mais, depois mais ainda. O objetivo é que um dia você não precise mais da metade silabada.</div>
+
+  <hr style="border:none; border-top:.8pt solid var(--rule); margin:6mm 0 5mm">
+
+  <h2 style="font-size:20pt">Stretchy Speech <span style="font-size:12.5pt; color:var(--soft); font-weight:400">· Fala esticada</span></h2>
+  <p class="lead" style="margin-bottom:3.5mm">Uma onda anda pela tela. Você fala junto com ela, esticando os sons.</p>
+
+  <div class="box" style="text-align:center; padding:4.5mm">
+    <svg width="330" height="52" viewBox="0 0 330 52">
+      <path d="M0 26 Q41 0 82 26 T164 26 T246 26 T328 26" fill="none" stroke="#0E7C7B" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="123" cy="46" r="7" fill="#B4611D"/>
+    </svg>
+    <p class="mini" style="margin:0">A bolinha laranja anda em cima da onda. Acompanhe a velocidade dela.</p>
+  </div>
+
+  <p>Estique as vogais — os sons de <em>aaa</em> e <em>ooo</em> — e entre devagarinho em cada palavra. Ninguém fala assim o dia inteiro; é uma velocidade de treino. Mandar alguém "falar mais devagar" nunca funciona, mas ter uma coisa para acompanhar funciona.</p>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">6</span></div>
+</section>
+
+<!-- ─── 7 · smooth mechanics ─────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Como a boca faz o som</p>
+  <h2>Três jeitos de deixar os sons mais fáceis</h2>
+  <p class="lead">Estes são sobre o que a sua boca e a sua respiração estão fazendo.</p>
+
+  <div class="ex">
+    <div class="ico">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0E7C7B" stroke-width="1.9" stroke-linecap="round">
+        <path d="M3 18h18M6.5 18a5.5 5.5 0 0 1 11 0"/><path d="M12 3v3.5M5.6 7.6l1.6 1.6M18.4 7.6l-1.6 1.6"/></svg>
+    </div>
+    <div class="body">
+      <h3>Gentle Starts <span style="font-size:11pt; color:var(--soft); font-weight:400">· Começo suave</span></h3>
+      <p class="tech">Palavras que começam com vogal — a, e, i, o, u</p>
+      <p>Comece a palavra devagarinho, deixando o som aparecer aos poucos, em vez de soltar de uma vez. Pense num carro andando devagar, não numa bola sendo chutada.</p>
+      <p>Você treina em palavras como <strong>apple</strong>, <strong>open</strong>, <strong>every</strong> e <strong>ocean</strong>, porque não tem consoante dura na frente para forçar.</p>
+    </div>
+  </div>
+
+  <div class="ex">
+    <div class="ico">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0E7C7B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 5a6 6 0 0 0-8.5 0L5 10.5V19h8.5L19 13.5A6 6 0 0 0 19 5z"/><path d="M5 19L12 12"/></svg>
+    </div>
+    <div class="body">
+      <h3>Feather Touch <span style="font-size:11pt; color:var(--soft); font-weight:400">· Toque de pena</span></h3>
+      <p class="tech">Os sons de apertar — p, b, t, d, k, g</p>
+      <p>Nesses, os lábios e a língua se apertam, e a pressão pode ir aumentando até não sair nada.</p>
+      <p>Então encoste <strong>de leve</strong>. Uma pena pousando, não um martelo. Treine com <strong>pizza</strong>, <strong>table</strong>, <strong>dog</strong>, <strong>cake</strong>, <strong>bike</strong>.</p>
+    </div>
+  </div>
+
+  <div class="ex">
+    <div class="ico">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0E7C7B" stroke-width="1.9" stroke-linecap="round">
+        <path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-2.6 4-2.6 6 0s4 2.6 6 0 4-2.6 6 0"/></svg>
+    </div>
+    <div class="body">
+      <h3>Wave Breathing <span style="font-size:11pt; color:var(--soft); font-weight:400">· Respiração em onda</span></h3>
+      <p class="tech">A respiração, e onde a fala acontece</p>
+      <p>Um círculo cresce e diminui. Puxe o ar pelo nariz enquanto ele cresce, segure um pouquinho, e fale enquanto ele diminui.</p>
+      <p>Vale saber isto: <strong>a fala sai na hora de soltar o ar</strong>, nunca na hora de puxar. Se o ar acabou, a palavra não vem. Aperte <span class="en">Start breathing</span> e siga o círculo.</p>
+    </div>
+  </div>
+
+  <div class="tip" style="margin-top:1mm"><b>Você não precisa pensar nos três ao mesmo tempo.</b> Nunca. Escolha um, faça cinco minutos, esqueça. A sua boca aprende um de cada vez.</div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">7</span></div>
+</section>
+
+<!-- ─── 8 · building up + rescue ─────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Aumentando aos poucos</p>
+  <h2>Começar pequeno e ir crescendo</h2>
+
+  <div class="ex">
+    <div class="ico">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0E7C7B" stroke-width="1.9" stroke-linecap="round">
+        <path d="M8 3v18M16 3v18M8 7.5h8M8 12h8M8 16.5h8"/></svg>
+    </div>
+    <div class="body">
+      <h3>Word Ladder <span style="font-size:11pt; color:var(--soft); font-weight:400">· Escada de palavras</span></h3>
+      <p class="tech">Uma palavra, depois duas, depois mais</p>
+      <p>Você começa no degrau de baixo com uma palavra só — <strong>Pizza.</strong> Se sair lisa, você sobe: <strong>I like pizza. I like hot pizza. I like hot cheese pizza.</strong> São seis degraus até o topo.</p>
+      <p>Se um degrau travar, toque em <span class="en">Bumpy</span> e você desce um e tenta de novo. <strong>Aqui não tem como errar.</strong> O exercício só acha o degrau em que a sua fala está confortável, e vai empurrando para cima a partir dali.</p>
+    </div>
+  </div>
+
+  <div class="ex">
+    <div class="ico">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0E7C7B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 19h4v-4h5v-4h5V7h4"/></svg>
+    </div>
+    <div class="body">
+      <h3>Stepping Stones <span style="font-size:11pt; color:var(--soft); font-weight:400">· Pedras no caminho</span></h3>
+      <p class="tech">Pausar nos lugares certos</p>
+      <p>Uma frase comprida é muita coisa para carregar de uma vez só. Então o app coloca marquinhas nela, assim:</p>
+      <p style="font-family:Poppins,sans-serif; font-size:11pt; background:var(--tealsoft); padding:2.6mm 3.6mm; border-radius:3mm">After school today <span style="color:#0E7C7B">/</span> I want to ride my bike <span style="color:#0E7C7B">/</span> down to the park.</p>
+      <p>Dê uma pausinha em cada marca. <strong>As pausas são suas.</strong> Ninguém está te cronometrando, e pausa não é erro — todo mundo pausa quando fala.</p>
+    </div>
+  </div>
+
+  <p class="eyebrow" style="margin-top:5mm">Quando a palavra trava</p>
+
+  <div class="ex amber">
+    <div class="ico">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B4611D" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2.8l7.5 2.7v6c0 4.6-3.1 8.4-7.5 9.7-4.4-1.3-7.5-5.1-7.5-9.7v-6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>
+    </div>
+    <div class="body">
+      <h3>Rescue Moves <span style="font-size:11pt; color:var(--soft); font-weight:400">· Manobras de resgate</span></h3>
+      <p class="tech">Três coisas para fazer na hora</p>
+      <p><strong>Escorregar para fora.</strong> Quando travar numa palavra, não pare e não force mais. Solte no meio dela e e-s-c-o-r-r-e-g-u-e até o fim. Travar não é o fim da palavra.</p>
+      <p><strong>Falar de novo, fácil.</strong> Se a palavra saiu travada, termine ela. Pare um segundo. Aí fale a mesma palavra de novo, com calma. Você não está consertando um erro — está mostrando para a sua boca que o jeito fácil também existe.</p>
+      <p><strong>Se preparar antes.</strong> Quando você sentir que vem uma palavra difícil, deixe a boca pronta antes de começar. Quase sempre dá para sentir um segundinho antes. Esse segundo já basta.</p>
+    </div>
+  </div>
+
+  <div class="tip"><b>Treine essas manobras quando você estiver calmo</b>, não só quando travar. Assim elas já estão prontas na hora que você precisar.</div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">8</span></div>
+</section>
+
+<!-- ─── 9 · read + out loud ──────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Seu lado · botão 3</p>
+  <h2>Read <span style="font-size:14pt; color:var(--soft); font-weight:400">· Ler em voz alta</span></h2>
+  <p class="lead">Ler em voz alta, em quatro tamanhos: palavras soltas, pedacinhos, frases e histórias curtas.</p>
+
+  <div class="box teal">
+    <h4>O truque que funciona de verdade</h4>
+    <p style="margin:0">Leia <strong>ao mesmo tempo</strong> que um adulto, em voz alta, as duas vozes juntas. Quase todo mundo que gagueja fica liso lendo junto com alguém. Faça assim primeiro, depois leia de novo sozinho. Isso também é a melhor coisa para pedir a um professor na escola.</p>
+  </div>
+
+  <p>Toque nos quatro botões de cima para trocar de nível. <span class="en">Next</span> e <span class="en">Back</span> andam pelas frases. Vale tentar uma passada em fala silabada também.</p>
+
+  <hr style="border:none; border-top:.8pt solid var(--rule); margin:6mm 0 5mm">
+
+  <p class="eyebrow">Seu lado · botão 4</p>
+  <h2 style="font-size:21pt">Out Loud <span style="font-size:13pt; color:var(--soft); font-weight:400">· Na vida real</span></h2>
+  <p class="lead" style="margin-bottom:3.5mm">Treinar no app é a parte fácil. Usar quando você está falando com alguém de verdade é a parte que conta.</p>
+
+  <p>Estas são tarefas para a vida real. Elas estão organizadas por <strong>o quanto é difícil lembrar da sua técnica</strong> naquela situação — não por quanta coragem você precisa ter.</p>
+
+  <table style="margin-top:2.5mm">
+    <tr><th>Nível</th><th>Exemplo</th></tr>
+    <tr><td><b>Fácil</b><br><span class="mini">quieto, só vocês dois</span></td><td>Usar fala silabada em duas frases enquanto vocês fazem o jantar.</td></tr>
+    <tr><td><b>Médio</b><br><span class="mini">agitado ou animado</span></td><td>Contar uma história empolgante — daquelas em que você normalmente acelera — com fala esticada.</td></tr>
+    <tr><td><b>Mais difícil</b><br><span class="mini">na rua</span></td><td>Pedir a sua própria comida usando uma primeira frase devagar e esticada.</td></tr>
+  </table>
+
+  <p>Toque em qualquer tarefa para colocar na sua lista, ou escreva a sua na caixinha e aperte <span class="en">Did one</span>.</p>
+
+  <div class="tip"><b>Para o adulto, três regras sobre lembrar a criança.</b> Fora das sessões de treino, um lembrete para usar a técnica vale no máximo umas <strong>uma vez por hora</strong>, só onde a criança está confortável (em casa, com a família, não na frente dos amigos), e <strong>nunca logo depois de uma travada</strong>. Um lembrete que cai logo depois de uma gagueira vira bronca, e a criança para de usar a técnica.</div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">9</span></div>
+</section>
+
+<!-- ─── 10 · talk + dia comum ────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Seu lado · botão 5</p>
+  <h2>Talk <span style="font-size:14pt; color:var(--soft); font-weight:400">· Conversar</span></h2>
+  <p class="lead">Dez minutos só conversando com um adulto, em algum lugar quieto.</p>
+  <p>Tem uma carta com pergunta para começar, e um cronômetro. Aperte <span class="en">Another question</span> se não gostar da pergunta que apareceu. Isto não é prova — é a conversa comum para a qual todo o treino está apontando.</p>
+
+  <div class="box teal" style="margin-top:4mm">
+    <h4>O que o adulto deve estar fazendo</h4>
+    <ul class="tight" style="margin-bottom:0">
+      <li>Parar o que estiver fazendo. Virar e olhar para a criança.</li>
+      <li>Falar mais devagar você também, e pausar mais. Mostre, não mande fazer.</li>
+      <li>Esperar. Deixar ela terminar a palavra sozinha.</li>
+      <li>Responder <em>o que</em> ela disse, não como ela disse.</li>
+      <li>Aqui não se corrige nada. Esta parte é só conversa.</li>
+    </ul>
+  </div>
+
+  <div class="tip" style="margin-top:4mm"><b>Dez minutos contam como treino.</b> Quando o cronômetro chega ao fim, o app já soma no dia sozinho — não precisa apertar mais nada.</div>
+
+  <hr style="border:none; border-top:.8pt solid var(--rule); margin:6mm 0 5mm">
+
+  <h2 style="font-size:19pt">Como é um dia comum</h2>
+  <p class="lead" style="margin-bottom:3.5mm">Você não precisa fazer tudo. Um dia assim já está de bom tamanho.</p>
+
+  <table>
+    <tr><th>Quando</th><th>O quê</th><th>Quanto tempo</th></tr>
+    <tr><td><b>Antes da escola</b></td><td>Syllable Time, frases curtas, batida devagar</td><td>5 min</td></tr>
+    <tr><td><b>Depois da escola</b></td><td>Mais um exercício do Today — o que você quiser</td><td>5 min</td></tr>
+    <tr><td><b>Fazendo o jantar</b></td><td>A sua tarefa da vida real. Duas frases já bastam.</td><td>1 min</td></tr>
+    <tr><td><b>Depois do jantar</b></td><td>Talk, ou ler junto em voz alta no Read</td><td>10 min</td></tr>
+    <tr><td><b>Depois que você dorme</b></td><td>O adulto dá a nota do dia</td><td>1 min</td></tr>
+  </table>
+
+  <div class="tip"><b>Pulou um dia? Não acontece nada de ruim.</b> Retome amanhã. Um pouquinho quase todo dia vale mais do que muito uma vez por semana, e ficar uma semana sem fazer nada não apaga as semanas anteriores.</div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">10</span></div>
+</section>
+
+<!-- ─── 11 · botões ──────────────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Consulta rápida</p>
+  <h2>Todos os botões, explicados</h2>
+  <p class="lead">Estes aparecem no app inteiro. Aqui está o que cada um faz de verdade.</p>
+
+  <div class="card">
+    <div class="keyrow"><span class="btn ghost">🔊 Hear it</span><span class="what">O aparelho lê as palavras em voz alta para você saber o alvo. Ele lê devagar de propósito. Ele <b>não</b> consegue fazer fala silabada — quem faz isso é a batida.</span></div>
+    <div class="keyrow"><span class="btn ghost">● Record me</span><span class="what">Grava a sua voz. Aperte de novo para parar.</span></div>
+    <div class="keyrow"><span class="btn ghost">▶ Play back</span><span class="what">Toca o que você acabou de gravar, para você se ouvir. No Syllable Time, escute se está <b>igualzinho e emendado</b> ou picado.</span></div>
+    <div class="keyrow"><span class="btn ghost">Smooth</span><span class="what">Você achou que aquela saiu bem. Passa para a próxima.</span></div>
+    <div class="keyrow"><span class="btn ghost">Bumpy</span><span class="what">Você achou que aquela travou. Também passa — menos no Word Ladder, onde ela te desce um degrau.</span></div>
+    <div class="keyrow"><span class="btn">Finish practice</span><span class="what">Salva os seus minutos e te leva de volta para o Today. <b>Aperte isso</b> ou o treino não é contado.</span></div>
+  </div>
+
+  <div class="box amber" style="margin-top:5mm">
+    <h4>Sobre as gravações</h4>
+    <p style="margin:0">Elas ficam guardadas neste aparelho, e em mais lugar nenhum. Nada é enviado pela internet, e ninguém consegue ouvir a não ser que um adulto toque para a pessoa. O adulto acha todas em <b>Recordings</b>, escuta de novo e apaga a que quiser.</p>
+  </div>
+
+  <h3 style="margin-top:6mm">Se alguma coisa não funcionar</h3>
+  <table>
+    <tr><th>O que acontece</th><th>Por quê</th></tr>
+    <tr><td><b>O botão de gravar diz que não está disponível</b></td><td>Alguns navegadores não deixam. Todo o resto continua funcionando.</td></tr>
+    <tr><td><b>Ele pergunta sobre o microfone</b></td><td>Diga que sim, ou a gravação não funciona. Ele só pergunta uma vez.</td></tr>
+    <tr><td><b>Não sai som de clique</b></td><td>Confira o botão Click on, e veja se o aparelho não está no silencioso.</td></tr>
+    <tr><td><b>Nada foi salvo</b></td><td>O treino salva quando você aperta Finish practice. E uma janela anônima esquece tudo.</td></tr>
+  </table>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">11</span></div>
+</section>
+
+<!-- ─── 12 · adulto: nota diária ─────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">A segunda metade</p>
+  <h2>Para o adulto</h2>
+  <p class="lead">Aperte o ícone das duas pessoas no canto superior direito. Quatro abas: <span class="en">Today</span> (hoje), <span class="en">Progress</span> (progresso), <span class="en">Guides</span> (guias) e <span class="en">Find help</span> (achar ajuda). O conteúdo dessas abas está em inglês.</p>
+
+  <h3 style="margin-top:5mm">Today — a nota diária</h3>
+  <p>Um número para o dia inteiro, refletindo a fala <strong>típica</strong>. Não o pior momento, não uma amostra só.</p>
+
+  <div class="sev">
+    <span>0</span><span>1</span><span>2</span><span>3</span><span class="on">4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+  </div>
+  <div class="sevends"><span>0 · nenhuma gagueira</span><span>10 · gagueira gravíssima</span></div>
+
+  <p style="margin-top:3.5mm">Esta é a medida que os fonoaudiólogos australianos realmente pedem aos pais. O app vem com a escala 0–10 do Programa Oakville; dá para mudar para a escala 0–9 do Lidcombe em <span class="en">Find help → Settings</span>, para bater com a que o seu profissional usar.</p>
+
+  <div class="box teal">
+    <h4>Fazer o número significar alguma coisa</h4>
+    <ul class="tight" style="margin-bottom:0">
+      <li>Na primeira semana, anote como é um <strong>dia 2</strong> e um <strong>dia 6</strong> na sua casa. Depois disso, dê a nota sempre comparando com essas referências.</li>
+      <li>Avalie a <em>fala</em>, não o dia. Um dia ruim na escola puxa a nota para cima injustamente.</li>
+      <li><strong>Dê a nota depois que ele dormir.</strong> Se o número virar uma nota escolar, você inventou uma pressão que não existia.</li>
+      <li>O profissional vai querer a sua nota até um ponto de diferença da dele. Mais adiante, com a gravidade baixa, vai querer idênticas.</li>
+    </ul>
+  </div>
+
+  <h3 style="margin-top:5mm">Where were the bumps? — onde foram as travadas</h3>
+  <p>Opcional, e a coisa mais útil do app para o caso de vocês. Avalie só as situações que realmente aconteceram no dia — deixe o resto em branco. Em algumas semanas isso responde o que um número diário sozinho não responde: <strong>o contexto muda alguma coisa?</strong></p>
+  <p style="margin-bottom:0">Se as barras saírem mais ou menos iguais, isso confirma o quadro e simplifica o plano. Se uma se destacar bem, vale contar isso ao profissional.</p>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">12</span></div>
+</section>
+
+<!-- ─── 13 · outras caixas + progress ────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Lado do adulto · Today</p>
+  <h2>As outras duas caixas</h2>
+
+  <div class="card hl">
+    <h4>Technique used in real talk · técnica usada na conversa real</h4>
+    <p style="margin:0">Toque em + cada vez que ele usar fala silabada, fala esticada ou uma manobra de resgate <strong>fora</strong> de uma sessão de treino. Este é o número que mais importa. Ficar fluente no treino é fácil; levar isso para a conversa comum é onde os programas dão certo ou fracassam.</p>
+  </div>
+
+  <div class="card">
+    <h4>Notes for the speech pathologist · notas para o fonoaudiólogo</h4>
+    <p style="margin:0">O que ajudou, o que não ajudou, se a técnica se sustentou. É isso que um profissional não consegue ver numa consulta de trinta minutos. Uma frase já basta.</p>
+  </div>
+
+  <p class="eyebrow" style="margin-top:7mm">Lado do adulto · aba 2</p>
+  <h2>Progress <span style="font-size:13pt; color:var(--soft); font-weight:400">· Progresso</span></h2>
+  <p class="lead">Últimos 28 dias. <strong>Leia a direção, não os dias soltos.</strong> A gagueira varia naturalmente — um dia ruim depois de uma boa semana é normal, não é recaída.</p>
+
+  <table>
+    <tr><th>Gráfico</th><th>O que ele te diz</th></tr>
+    <tr><td><b>Severity rating</b><br><span class="mini">gravidade</span></td><td>Os pontinhos claros são os dias soltos; a linha é a média móvel de 7 dias. <b>Leia a linha.</b> Descendo é progresso.</td></tr>
+    <tr><td><b>Where the bumps are worst</b><br><span class="mini">onde trava mais</span></td><td>Gravidade média por situação, da pior para a melhor. Barras parelhas querem dizer que o contexto não é o motor.</td></tr>
+    <tr><td><b>Technique in the wild</b><br><span class="mini">técnica na vida real</span></td><td>Uso na vida real contra dias de treino. Você quer as barras verdes subindo.</td></tr>
+  </table>
+
+  <p>Os três quadradinhos de cima são a gravidade média, a variação no período, e quantos dias dos 28 tiveram treino. A variação fica em branco até haver pelo menos oito notas, porque abaixo disso ela estaria comparando os mesmos dias com eles mesmos.</p>
+
+  <div class="box">
+    <h4>Para a consulta</h4>
+    <p style="margin-bottom:2mm"><span class="en">Export CSV</span> salva uma planilha com tudo — notas diárias, minutos, uso na vida real, notas por situação, observações. <span class="en">Print</span> imprime a página.</p>
+    <p style="margin:0">Leve isso. Quatro semanas de notas diárias dão a um profissional muito mais informação do que meia hora observando a criança numa sala estranha — e o guia do Oakville lembra que a fala da criança na clínica muitas vezes não é a mesma de casa.</p>
+  </div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">13</span></div>
+</section>
+
+<!-- ─── 14 · guides + regras ─────────────────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Lado do adulto · abas 3 e 4</p>
+  <h2>Guides e Find help</h2>
+  <p class="lead"><span class="en">Guides</span> traz a versão curta da pesquisa — os programas de tratamento explicados, o que pedir na escola, como dar nota de forma consistente, e como pagar pela terapia na Austrália. Toque num título para abrir.</p>
+  <p><span class="en">Find help</span> traz a lista de clínicas, telefones e as configurações.</p>
+
+  <h3 style="margin-top:5mm">As três regras sobre lembrar a criança</h3>
+  <p>Estas importam mais do que qualquer outra coisa neste manual, então ganharam a própria caixa.</p>
+
+  <div class="box amber">
+    <p style="margin-bottom:2.2mm"><strong>1. No máximo umas uma vez por hora.</strong> Fora das sessões de treino, um empurrãozinho para usar a técnica tem que ser raro.</p>
+    <p style="margin-bottom:2.2mm"><strong>2. Só onde ele estiver confortável.</strong> Em casa, com a família. Não na frente dos amigos.</p>
+    <p style="margin:0"><strong>3. Nunca logo depois de uma travada.</strong> Um lembrete que chega logo depois de uma gagueira transforma a técnica em bronca, e a criança para de usar caladinha. Lembre durante um trecho fluente, ou faça você mesmo e deixe ele entrar junto.</p>
+  </div>
+
+  <h3 style="margin-top:5mm">O que não dizer</h3>
+  <div class="two">
+    <div class="card">
+      <h4 style="color:var(--amber)">Evite</h4>
+      <ul class="tight" style="margin:0; font-size:10pt">
+        <li>"Fala mais devagar."</li>
+        <li>"Calma." "Respira fundo."</li>
+        <li>"Pensa antes de falar."</li>
+        <li>Terminar a palavra por ele.</li>
+        <li>"Fala de novo" na frente dos outros.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Em vez disso</h4>
+      <ul class="tight" style="margin:0; font-size:10pt">
+        <li>Fale você mais devagar e pause mais.</li>
+        <li>Pare, vire e olhe para ele.</li>
+        <li>Espere. Deixe ele terminar a palavra.</li>
+        <li>Responda <em>o que</em> ele disse.</li>
+        <li>Elogie a fala lisa bem mais do que comenta as travadas.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip" style="margin-top:4mm"><b>Mais uma, direto do guia de tratamento.</b> Se você não tiver certeza de que aquilo foi mesmo uma gagueira, não responda nada. Correções em dúvida fazem mais mal do que correção nenhuma.</div>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">14</span></div>
+</section>
+
+<!-- ─── 15 · dados, bilíngue, fechamento ─────────────────────────── -->
+<section class="page">
+  <p class="eyebrow">Lado do adulto · configurações</p>
+  <h2>Onde ficam os dados</h2>
+
+  <table>
+    <tr><th>Pergunta</th><th>Resposta</th></tr>
+    <tr><td><b>Onde fica guardado?</b></td><td>No navegador, naquele aparelho só. Em mais lugar nenhum.</td></tr>
+    <tr><td><b>Alguma coisa é enviada?</b></td><td>Não. Sem conta, sem servidor, sem rastreamento. O app não faz nenhuma chamada de rede depois de carregar.</td></tr>
+    <tr><td><b>Ele escuta meu filho?</b></td><td>Não. Não existe reconhecimento de fala nele. As gravações são guardadas no aparelho para você comparar a evolução e tocar alguma para a fonoaudióloga, e nunca são enviadas para lugar nenhum — o aplicativo não tem servidor para onde enviar. Apague uma, ou todas, em <b>Recordings</b>; elas também somem com <b>Erase all data</b>.</td></tr>
+    <tr><td><b>Como faço backup?</b></td><td><span class="en">Export CSV</span> na aba Progress. Esse arquivo é o backup.</td></tr>
+    <tr><td><b>E se eu limpar o navegador?</b></td><td>Os dados vão junto. Exporte antes.</td></tr>
+    <tr><td><b>Dois aparelhos?</b></td><td>Eles não compartilham. Escolha um e mantenha as notas nele.</td></tr>
+  </table>
+
+  <div class="card">
+    <h4>Configurações, dentro de Find help</h4>
+    <ul class="tight" style="margin:0; font-size:10pt">
+      <li><span class="en">Child's first name</span> — o primeiro nome, usado só no cumprimento.</li>
+      <li><span class="en">Severity rating scale</span> — a escala: 0–10 (Oakville) ou 0–9 (Lidcombe). As notas antigas não são convertidas, então escolha uma logo e fique com ela.</li>
+      <li><span class="en">Erase all data</span> — apaga tudo, definitivamente. Ele pergunta antes.</li>
+    </ul>
+  </div>
+
+  <h3 style="margin-top:4mm">Instalar direito</h3>
+  <p>Abra o app no navegador de um celular ou tablet e use <strong>Adicionar à Tela de Início</strong>. Ele ganha um ícone próprio e abre em tela cheia, como um app comum. Funciona sem internet depois de carregar uma vez.</p>
+
+  <div class="box amber" style="margin-top:4mm">
+    <h4>Uma coisa sobre ser bilíngue</h4>
+    <p style="margin:0">O guia do Programa Oakville é explícito: <strong>se a criança gagueja mais em outra língua do que na língua do tratamento, o tratamento também precisa ser feito na outra língua.</strong> Se ele gagueja em português tanto quanto em inglês, vale levar isso à consulta — e vale treinar em português em casa, mesmo com o app em inglês. A batida da fala silabada funciona igual nas duas línguas.</p>
+  </div>
+
+  <div class="box teal">
+    <h4>A única coisa para lembrar</h4>
+    <p style="margin:0">O Steady Voice é apoio ao treino, não tratamento. Não existe boa evidência de que qualquer app trate gagueira sozinho, e o guia do Oakville diz claramente que o programa <strong>não foi feito para um pai ou mãe conduzir sem um profissional</strong>. Use junto com um fonoaudiólogo, não no lugar de um.</p>
+  </div>
+
+  <p style="margin-top:4mm; text-align:center; color:var(--soft); font-size:9.6pt">
+    Steady Voice · manual · setembro de 2026<br>
+    Baseado no guia de tratamento do Programa Oakville, Australian Stuttering Research Centre, UTS.
+  </p>
+
+  <div class="foot"><span>Steady Voice · manual</span><span class="n">15</span></div>
+</section>
+
+</body>
+</html>

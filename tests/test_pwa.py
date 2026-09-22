@@ -16,7 +16,6 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PWA = ROOT / "pwa"
-CHROMIUM = "/opt/pw-browsers/chromium"
 
 
 @pytest.fixture(scope="module")
@@ -209,3 +208,52 @@ def test_ios_gets_told_about_the_silent_switch(server, page):
     }""")
     page.wait_for_timeout(400)
     assert "silent switch" in page.inner_text("#view").lower()
+
+
+# ── playback ──────────────────────────────────────────────────────────
+def test_playback_never_seeks_before_play(server, page):
+    """`audioEl.currentTime = 0` was the bug. Safari throws InvalidStateError
+    when readyState is HAVE_NOTHING, and the throw landed before play() ran —
+    so recording worked, playback silently did nothing. Its MediaRecorder MP4
+    is also often unseekable, so the seek was never safe to begin with."""
+    src = (ROOT / "app" / "steadyvoice.body.html").read_text()
+    assert "currentTime=0" not in src.replace(" ", ""), \
+        "a play handler is seeking again; rebuild the Audio element instead"
+    assert src.count("playBack(audioUrl)") == 3, \
+        "all three recorders should play back through the shared helper"
+
+
+def test_playback_failure_is_reported_not_swallowed(server, page):
+    """An unhandled play() rejection is invisible: no sound, no message,
+    no clue. That is what made this look unfixable from the outside."""
+    src = (ROOT / "app" / "steadyvoice.body.html").read_text()
+    play = src[src.index("function playBack("):]
+    play = play[:play.index("function stopPlayback(")]
+    assert ".catch(" in play, "play() rejection must be caught and surfaced"
+    assert "silent switch" in play, "on iOS the likeliest cause is the mute switch"
+
+
+def test_playback_stops_before_the_blob_url_is_revoked(server, page):
+    """Leaving the screen revokes the URL. Revoking it underneath a playing
+    element is how you get a stuck or erroring <audio> on the next visit."""
+    src = (ROOT / "app" / "steadyvoice.body.html").read_text()
+    for line in src.splitlines():
+        if "URL.revokeObjectURL(audioUrl)" in line:
+            assert "stopPlayback()" in line, f"unguarded revoke: {line.strip()}"
+
+
+def test_ipad_is_recognised_as_ios(server, page):
+    """iPadOS Safari sends a Macintosh user agent by default, so a bare
+    /iPad/ test misses every modern iPad — including the iPad mini this is
+    installed on. Touch points on MacIntel is the standard tell."""
+    install(page, server)
+    # configurable so the second stub can replace the first in this page.
+    stub = """(touches) => {
+      Object.defineProperty(navigator, 'platform',
+        { get: () => 'MacIntel', configurable: true });
+      Object.defineProperty(navigator, 'maxTouchPoints',
+        { get: () => touches, configurable: true });
+      return isIOS();
+    }"""
+    assert page.evaluate(stub, 5) is True, "an iPad reports MacIntel with touch"
+    assert page.evaluate(stub, 0) is False, "a real Mac must not be treated as iOS"

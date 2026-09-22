@@ -1,6 +1,6 @@
 # Steady Voice test suite
 
-122 tests. Playwright drives the real page in Chromium; pure logic is exercised through `page.evaluate` against the live globals, because the app is one self-contained HTML file with no module system to import from.
+142 tests. Playwright drives the real page in Chromium; pure logic is exercised through `page.evaluate` against the live globals, because the app is one self-contained HTML file with no module system to import from.
 
 ## Running
 
@@ -23,6 +23,7 @@ The `build_app` fixture runs `build.py` before the session, so the tests always 
 | `test_parent.py` | Severity scales, situation ratings, charts, CSV export, settings, erase |
 | `test_safety.py` | Escaping, the privacy claim, and the clinical content that must not drift |
 | `test_pwa.py` | The offline install path — serves `pwa/` over real HTTP, because a service worker will not register from `file://` |
+| `test_recordings.py` | The saved-audio store, the Recordings screen, export, and every path that deletes a clip |
 
 ## What the safety tests are for
 
@@ -43,7 +44,7 @@ The rest guards **content that would be actively harmful if it silently drifted*
 
 ## Bugs this suite caught
 
-Nine real ones, all now fixed:
+Eleven real ones, all now fixed:
 
 1. **Erase all data did not erase.** `Object.assign({}, DEFAULTS, stored)` left `S.days` and `S.profile` pointing at the `DEFAULTS` objects on a fresh install, so every rating written also mutated `DEFAULTS` — and the wipe, which restores from `DEFAULTS`, handed the data straight back. Now deep-clones on boot.
 2. **The streak reset every midnight.** `streak()` counted from today, so a child who had practised four days running saw a 0 the moment they opened the app before practising. Now counts from yesterday when today is still empty.
@@ -55,10 +56,14 @@ Nine real ones, all now fixed:
 8. **Offline availability depended on Google Fonts loading.** The service worker registered on `window.load`, so a slow or unreachable font host delayed it — or lost it entirely if the app was closed first. Now registers immediately.
 9. **The secure-origin guard missed `127.0.0.1`.** It compared `location.hostname` against the string `"localhost"`, so the worker silently never registered when served from a loopback IP. Now uses `window.isSecureContext`, which is the actual test.
 
-Numbers 6 to 9 were all found by `test_pwa.py`. Number 8 surfaced only because this container blocks the font CDN — an environment quirk that happened to expose a real robustness bug.
+10. **Playback did nothing on iPhone and iPad.** The play handler ran `audioEl.currentTime = 0` before `play()`. Safari throws `InvalidStateError` when `readyState` is `HAVE_NOTHING`, and the throw landed *before* `play()` was ever called — so recording worked, playback silently didn't, with nothing on screen to explain it. Safari's MediaRecorder MP4 is frequently unseekable too, so the seek was never safe. Now rebuilds the `Audio` element instead, and catches the `play()` rejection, which was also being swallowed.
+11. **The iOS silent-switch hint never reached the iPad.** It tested `/iPad|iPhone|iPod/` against the user agent, but iPadOS Safari sends a *Macintosh* user agent by default for desktop-class browsing. Every modern iPad — including the one this is installed on — failed the test. Now uses touch points on `MacIntel`, which is the standard tell, with a test proving a real Mac still isn't matched.
+
+Numbers 6 to 9 were all found by `test_pwa.py`, 10 and 11 by a bug report from the iPad. Number 8 surfaced only because this container blocks the font CDN — an environment quirk that happened to expose a real robustness bug.
 
 ## Notes
 
 - Audio is not asserted directly. `AudioContext` is created but produces no audible output in headless Chromium, so the metronome tests assert the visual beat and the syllable highlight advancing instead.
 - Tests that read on-screen copy use `app.text()`, which returns *rendered* text — `text-transform: uppercase` on `.eyebrow` headings applies, so those comparisons are case-insensitive. `app.all_text()` expands collapsed `<details>` first.
+- `test_recordings.py` borrows the HTTP server from `test_pwa.py`: Chromium refuses IndexedDB on an opaque `file:` origin, so the audio store cannot be tested from disk. The store degrades quietly there rather than throwing, which is itself a test.
 - The suite takes about two minutes. Each test gets a fresh browser context, so `localStorage` never leaks between them.

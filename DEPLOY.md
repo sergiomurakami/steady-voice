@@ -65,7 +65,7 @@ Edit `app/steadyvoice.body.html` — **never** `app/steadyvoice.html` or `pwa/in
 
 ```bash
 cd "AI Projects/Stuttering"
-python3 -m pytest        # optional, but it has caught nine real bugs
+python3 -m pytest        # optional, but it has caught eleven real bugs
 git add -A
 git commit -m "what changed"
 git push
@@ -124,7 +124,7 @@ It should open normally, the metronome should click, and the daily rating should
 | Microphone recording | Yes, WebM | Yes, **MP4** — the app reads the container from the recorder rather than assuming |
 | Metronome click | Yes | **Silenced by the hardware mute switch.** The app says so on the Syllable Time screen; the visual beat works either way |
 | Speech synthesis (Hear it) | Yes | Yes |
-| Storage cap | Generous | Tighter; this app stores kilobytes, so not a concern |
+| Storage cap | Generous | Tighter, and saved recordings are the only thing here big enough to matter. Recordings shows how much is used against what is available |
 
 ---
 
@@ -136,7 +136,9 @@ It should open normally, the metronome should click, and the daily rating should
 
 **Two devices do not share data.** Storage is per browser, per device. If the daily rating happens on your phone, keep doing it on your phone. **Export CSV** moves a copy anywhere.
 
-**Clearing Safari history clears the app's data** on iOS. Export the CSV occasionally — that file is the backup, and it is what you take to appointments anyway.
+**Clearing Safari history clears the app's data** on iOS — ratings *and* every saved recording. Export the CSV occasionally, and share any recording worth keeping out to Files. Those are the only backups that exist.
+
+**Recordings live on one device.** They are stored in that browser's IndexedDB, so a clip recorded on the iPad is not on the iPhone. Share the ones that matter somewhere durable rather than assuming they are safe where they are.
 
 **Private/incognito windows forget everything.** Not a place to keep ratings.
 
